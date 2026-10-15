@@ -98,35 +98,12 @@ direnv exec . git commit …
 
 ### Verification while iterating (fast path)
 
-Use the narrowest command that can disprove the change while code is still moving.
-Do **not** run full-workspace Clippy, tests, or rustdoc after every edit; broad checks
-are a final gate, not an inner development loop.
+Use the narrowest command that can disprove the change; broad checks are a final gate,
+not an inner loop. Procedure: [verifying-openlogi-changes](.agents/skills/verifying-openlogi-changes/SKILL.md).
 
-1. **Define one proof first.** Pick the focused test, compile target, or runtime
-   behavior that demonstrates the requested outcome.
-2. **Inner loop:** run that proof only. For Rust, prefer
-   `cargo test -p <crate> <test-filter>` for behavior and `cargo check -p <crate>`
-   for API/type feedback. A one-line or docs-only edit does not justify Clippy.
-3. **Once the code is stable:** run formatter check, the relevant tests, and Clippy
-   once for each crate actually changed (`cargo clippy -p <crate> --all-targets --
-   -D warnings`). For a shared public API, `cargo check` its affected consumers;
-   do not Clippy every consumer unless their source changed or `cargo check` exposes
-   a problem there.
-4. **Before push only:** choose the affected-package or full local gate below from
-   the final diff. If a gate command fails, fix the cause with a focused command,
-   then rerun that tier once after the tree is final again.
-
-Do not rerun an identical broad command merely because a later edit touched an
-unrelated file. Do rerun the focused check whose inputs changed. If no commit or push
-was requested, the task does not need the push gate solely because this file documents
-one; report the targeted verification that was actually relevant.
-
-### Local gate (hard stop before push — scale it to the affected graph)
-
-Before any push, read and follow the [local gate and push checklist](.agents/rules/ci.md#local-gate-hard-stop-before-push--scale-it-to-the-affected-graph).
-That file owns tier selection, commands, and the CI job map. Run the applicable
-gate on the final tree; do not push a known-red tree or bypass the hooks.
-A skipped job is **not** a pass. These procedures do not authorize a push.
+- Clippy once per changed crate when stable: `cargo clippy -p <crate> --all-targets -- -D warnings`. For a shared public API, `cargo check` its consumers; Clippy them only if their source changed or `cargo check` exposes a problem.
+- Do not rerun an identical broad command because a later edit touched an unrelated file; rerun the focused check whose inputs changed.
+- Before any push, follow the [local gate](.agents/rules/ci.md#local-gate-hard-stop-before-push--scale-it-to-the-affected-graph) on the final tree: a hard stop, a skipped job is not a pass, no known-red push, no bypassed hooks. With no commit or push requested, report the targeted verification instead.
 
 ### Running the app
 
